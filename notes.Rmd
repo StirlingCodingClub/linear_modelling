@@ -11,18 +11,28 @@ output:
 library(knitr);
 ```
 
+Contents
+================================================================================
 
-Making up data for heights of two plant species
+- [Making up data for heights of two plant species](#makeup)
+- [Equivalence of `t.test` versus a linear model `lm` in R](#equiv1)
+- [Further equivalence of `t.test`, `lm`, and now `aov`](#equiv2)
+- [Testing for a difference between means using randomisation](#random)
+- [What about when there are more than two groups?](#moregroups)
+- [Okay, but what's really happening with three groups?](#whatreally)
+
+
+<a name = "makeup">Making up data for heights of two plant species</a>
 ================================================================================
 
 Let's first make up some data and put it into a data frame. To make everything a bit more concrete, let's just imagine that we're sampling the heights of individual plants from two different species. Hence, we'll have one categorical independent variable, and one continuous dependent variable (plant height). I am just going to make up some data to work with below. The data frame below includes plant height (`height`; since this is a made up example, the units are not important, but let's make them mm) and species ID (`species_ID`). The first 10 plants (each plant is a unique row) are shown below.
 
 
 ```{r, echo = FALSE}
-species  <- c("species_1", "species_2");
-sim_pval <- 0;
+species_n <- c("species_1", "species_2");
+sim_pval  <- 0;
 while(sim_pval > 0.05 | sim_pval < 0.001){
-    species_eg  <- sample(x = species, size = 100, replace = TRUE);
+    species_eg  <- sample(x = species_n, size = 100, replace = TRUE);
     species1    <- as.numeric(species_eg == "species_1");
     species2    <- as.numeric(species_eg == "species_2");
     error       <- rnorm(n = 100, mean = 0, sd = 40);
@@ -73,7 +83,7 @@ legend(x = 0, y = 15, fill = c("red", "blue"),
 
 Visualising the histogram above, we already have a sense of whether or not knowing species ID is useful for predicting plant height. 
 
-Equivalence of `t.test` versus a linear model `lm` in R
+<a name="equiv1">Equivalence of `t.test` versus a linear model `lm` in R</a>
 ================================================================================
 
 Using our two vectors `species_1` and `species_2`, we can run a t-test as noted [by Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). 
@@ -98,9 +108,9 @@ summary(lmod1);
 
 Note how the information in the above output matches that from the `t.test` function. In using `lm`, we get a t value in the coefficients table of `summary(lmod1)$coefficients[2,3]`, and a p-value of  `summary(lmod1)$coefficients[2,4]`. We can also see the mean values for `species_1` and `species_2`, though in slightly different forms. From the `t.test` function, we see an estimated mean of `r round(as.numeric(ttest1$estimate[1]), digits = 4)` for species 1 and `r round(as.numeric(ttest1$estimate[2]), digits = 4)` for species 2 (this is at the bottom of the output, under `mean of x mean of y`). In the `lm`, we get the same information in a slightly different form. The estimate in the coefficients table for the intercept is listed as `r round(summary(lmod1)$coefficients[1,1], digits = 3)`; this is the value of the mean height for species 1. 
 
-Where is the value for the mean height of species 2? We get the value for species 2 by adding the estimate of its effect on the line below, such that `r round(summary(lmod1)$coefficients[1,1], digits = 3)` + `r round(summary(lmod1)$coefficients[2,1], digits = 3)` = `r round(summary(lmod1)$coefficients[1,1] + summary(lmod1)$coefficients[2,1], digits = 3)`. To understand why, think back to that `lm` structure, `plant_data$height ~ 1 + plant_data$species_ID`. Recall from [Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/) how this is a short-hand for the familiar equation $y_{i} = \beta_{0} + \beta_{1} x_{i}$. In this equation, $y_{i}$ is the dependent variable plant height, while the value $x_{i}$ is what we might call a dummy variable. It indicates whether or not the plant 'i' in question is a member of species 2. If yes, then $x_{i} = 1$. If no, then $x_{i} = 0$. 
+Where is the value for the mean height of species 2? We get the value for species 2 by adding the estimate of its effect on the line below, such that `r round(summary(lmod1)$coefficients[1,1], digits = 3)` + `r round(summary(lmod1)$coefficients[2,1], digits = 3)` = `r round(summary(lmod1)$coefficients[1,1] + summary(lmod1)$coefficients[2,1], digits = 3)`. To understand why, think back to that `lm` structure, `plant_data$height ~ 1 + plant_data$species_ID`. Recall from [Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/) how this is a short-hand for the familiar equation $y = \beta_{0} + \beta_{1} x$. In this equation, $y$ is the dependent variable plant height, while the value $x$ is what we might call a dummy variable. It indicates whether or not the plant in question is a member of species 2. If yes, then $x = 1$. If no, then $x = 0$. 
 
-Now think about the coefficients $\beta_{0}$ and $\beta_{1}$. Because $x_{i} = 0$ whenever `species_ID = species_1`, the predicted plant height $y_{i}$ for species 1 is simply $y_{i} = \beta_{0} + (\beta_{1} \times 0)$, which simplifies to $y_{i} = \beta_{0}$. This is why our `Estimate` of the `(Intercept)` row in the `summary(lmod1)` output equals the mean plant height of species 1. Next, because $x_{i} = 1$ whenever `species_ID = species_2`, the predicted plant height $y_{i}$ for species 2 is $y_{i} = \beta_{0} + (\beta_{1} \times 1)$, which simplifies to $y_{i} = \beta_{0} + \beta_{1}$. This is why our `Estimate` of the `plant_data$species_IDspecies_2` row in the `summary(lmod1)` equals `r round(summary(lmod1)$coefficients[2,1], digits = 3)`. It is the amount that needs to be added to the prediction for species 1 to get the prediction for species 2.
+Now think about the coefficients $\beta_{0}$ and $\beta_{1}$. Because $x = 0$ whenever `species_ID = species_1`, the predicted plant height $y$ for species 1 is simply $y = \beta_{0} + (\beta_{1} \times 0)$, which simplifies to $y = \beta_{0}$. This is why our `Estimate` of the `(Intercept)` row in the `summary(lmod1)` output equals the mean plant height of species 1. Next, because $x = 1$ whenever `species_ID = species_2`, the predicted plant height $y$ for species 2 is $y = \beta_{0} + (\beta_{1} \times 1)$, which simplifies to $y = \beta_{0} + \beta_{1}$. This is why our `Estimate` of the `plant_data$species_IDspecies_2` row in the `summary(lmod1)` equals `r round(summary(lmod1)$coefficients[2,1], digits = 3)`. It is the amount that needs to be added to the prediction for species 1 to get the prediction for species 2.
 
 To further clarify the concept, we can re-write that original two column table from above, but instead of having `species_1` or `species_2` for the `species_ID` column, we can replace it with a column that is `is_species_2`. A value of `is_species_2 = 0` means the plant is species 1, and a value of `is_species_2 = 1` means the plant is species 2.
 
@@ -130,33 +140,139 @@ points(x = 1, y = summary(lmod1)$coefficients[1,1] +
 The blue triangle shows the mean height of species 1 (i.e., the intercept of the linear model, $\beta_{0}$), and the orange diamond shows the mean height of species 2 (i.e., $\beta_{0} + \beta_{1}$). Since the distance between these two points is one, the slope of the line (rise over run) is identical to the difference between the mean species heights. Hence the reason for why $\beta_{1}$, which we often think about only as the 'slope' is also the difference between means.
 
 
-Further equivalence of `t.test`, `lm`, and now `aov`
+<a name="equiv2">Further equivalence of `t.test`, `lm`, and now `aov`</a>
 ================================================================================
 
+Analysis of variance (ANOVA) tests the null hypothesis that the mean values of groups are all equal. We often think of this being used for group numbers of three or more, but it is worth showing that ANOVA is equivalent to a t-test when the number of groups is two. A one-way ANOVA can be run using the `aov` function in R. Below, I do this for the same `plant_data` table as used for `t.test` and `lm`. 
 
-
-
-
-
-
-<!---
-
-
-
-```{r, echo = FALSE}
-alt         <- runif(n = 100, min = -20, max = 200);
-species     <- c("species_1", "species_2", "species_3");
-species_eg  <- sample(x = species, size = 100, replace = TRUE);
-species1    <- as.numeric(species_eg == "species_1");
-species2    <- as.numeric(species_eg == "species_2");
-species3    <- as.numeric(species_eg == "species_3");
-error       <- rnorm(n = 100, mean = 0, sd = 40);
-height      <- 400 + (species1 * 2) - alt + (0.1 * species1 * alt) + error;
-species_ID  <- as.factor(species_eg);
-plant_data  <- data.frame(height, species_ID, alt);
-kable(head(plant_data), align = "l");
+```{r}
+aov_1 <- aov(plant_data$height ~ plant_data$species_ID);
+summary(aov_1);
 ```
 
-We can plot these data as a linear model, similar to that [described by Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/).
+Note the `F value` and the `Pr(>F)` (i.e., the p-value) in the table above. The value `r round(summary(aov_1)[[1]][["F value"]][1], digits = 3)` matches the `F-statistic` produced from using `lm` in the previous section, and `r round(summary(aov_1)[[1]][["Pr(>F)"]][1], digits = 4)` is the same p-value that we calculated earlier. The methods are effectively the same.
 
---->
+<a name="random">Testing for a difference between means using randomisation</a>
+================================================================================
+
+An alternative approach to testing to the `t.test`, `lm`, and `aov` options above is to use randomisation. Randomisation approaches make fewer assumptions about the data, and I believe that they are often more intuitive. For a full discussion of randomisation techniques, see my [previous notes for Stirling Coding Club](https://stirlingcodingclub.github.io/randomisation/randomisation_notes.html), which goes into much more detail on the underlying logic of randomisation, bootstrap, and Monte Carlo methods. For now, I just want to illustrate how a randomisation approach can get be used for the same null hypothesis testing as shown in the previous methods above. Let us look back at the first ten rows of the data set taht I made up.
+
+```{r, echo = FALSE}
+kable(plant_data[1:10,], align = "l");
+```
+
+When we use null hypothesis testing, what we are asking is this:
+
+> If the difference between group means is the same (null hypothesis), then what is the probability of getting a difference between groups as or more extreme than the difference that we observe in the data?
+
+We might phrase the null hypothesis slightly differently:
+
+> If the difference between group means is random with respect to group identity (null hypothesis), then what is the probability of getting a difference between groups as or more extreme than the difference that we observe in the data?
+
+In other words, what if we were to randomly re-shuffle species IDs, so that we *knew* any difference between mean species heights was attributable to chance? What would the distribution of this difference look like, and where would our actual difference fall within this distribution? The logic behind randomisation here is to randomly re-shuffle group identity many times, then build a distribution for differences between randomly generated groups. We can do this with a bit of code below. First let's get the actual difference between mean heights of species 1 and species 2, i.e., `species[1] - species[2]`. We can use the `tapply` function in R to do this easily.
+
+```{r}
+species <- tapply(X = plant_data$height, INDEX = plant_data$species_ID, 
+                  FUN = mean);
+height_diffs <- as.numeric( species[1] - species[2] );
+print(height_diffs);
+```
+
+Using a [for loop](https://stirlingcodingclub.github.io/using_loops/loop_notes.html) in R, we can shuffle `species_ID`, then build a distribution showing what the difference between species means would be just due to random chance.
+
+
+```{r}
+null_diff  <- NULL;  # Place where the random diffs will go
+iterations <- 99999; # Number of reshuffles
+iter       <- 1;     # Start with the first
+while(iter < iterations){
+  new_species_ID  <- sample(x    = plant_data$species_ID, 
+                            size = length(plant_data$species_ID));
+  new_species     <- tapply(X = plant_data$height, INDEX = new_species_ID,
+                            FUN = mean);
+  new_diffs       <- as.numeric( new_species[1] - new_species[2] );
+  null_diff[iter] <- new_diffs;
+  iter            <- iter + 1;
+}
+```
+
+Each element in `null_diff` is now a difference between the mean of species 1 and the mean of species 2, given a random shuffling of species IDs. We can look at the distribution of `null_diff` in the histogram below.
+
+```{r, echo = FALSE}
+hist(null_diff, main = "", xlab = "Height difference between randomly assigned group means",
+     col = "blue");
+```
+
+As expected, most differences between randomly assigned species height means are somewhere around zero. Our actual value of `r round(height_diffs, digits = 3)`, which we have calculated several times now, is quite low, and on the extreme tail of the distribution above. What then is the probability of getting a value this extreme if species ID has nothing to do with plant height? The answer is just the total number of values equal or more extreme to the one we observed (`r round(height_diffs, digits = 3)`), divided by the total number of values that we tried (99999 + 1 = 100000; the plus one is for the actual value).
+
+```{r}
+p_value <- sum(abs(null_diff) > abs(height_diffs)) / 100000;
+```
+
+We get `p_value = ` `r p_value`. Notice how close this value is to the p-value that we obtained using `t.test`, `lm`, and `aov`. This is because the concept is the same; given that the null hypothesis is true, what is the probability of getting a value as or more extreme than the one actually observed?
+
+<a name="moregroups">What about when there are more than two groups?</a>
+================================================================================
+
+I want to briefly touch on what happens when there are more than three groups; for example, if we had three species instead of two. Of course, a t-test is now not applicable, but we can still use the linear model and ANOVA approaches. Let's use another data set, but with three species this time.
+
+```{r, echo = FALSE}
+species_n <- c("species_1", "species_2", "species_3");
+sim_pval  <- 0;
+while(sim_pval > 0.05 | sim_pval < 0.001){
+    species_eg  <- sample(x = species_n, size = 100, replace = TRUE);
+    species1    <- as.numeric(species_eg == "species_1");
+    species2    <- as.numeric(species_eg == "species_2");
+    species3    <- as.numeric(species_eg == "species_3");
+    error       <- rnorm(n = 100, mean = 0, sd = 40);
+    height      <- round(150 + (species2 * 20) + error, digits = 2);
+    species_ID  <- as.factor(species_eg);
+    plant_data  <- data.frame(height, species_ID);
+    sim_mod     <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+    sim_pval    <- summary(sim_mod)$coefficients[2,4];
+}
+write.csv(plant_data, file = "two_discrete_x_values.csv", row.names = FALSE);
+kable(plant_data[1:10,], align = "l");
+```
+
+As already mentioned, `t.test` will not work. But we can run both `lm` and `aov` with the exact same code as before with three groups. I will show `aov` first.
+
+```{r}
+aov_2 <- aov(plant_data$height ~ plant_data$species_ID);
+summary(aov_2);
+```
+
+The F-statistic calculated above is `r round(summary(aov_2)[[1]][["F value"]][1], digits = 3)`, and the p-value is `r round(summary(aov_2)[[1]][["Pr(>F)"]][1], digits = 4)`. The p-value in this case tests the null hypothesis that all groups (i.e., species) have the same mean values (i.e., heights). We can now use the `lm` function to run the same analysis with three groups.
+
+```{r}
+lmod2 <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+summary(lmod2);
+```
+
+We can find the F-statistic and p-value at the very bottom of the output, and note that they are the same as reported by `aov`. But look at what is going on with the `Estimate` values in the table (ignore the `Pr(>|t|)` values in the table). There are now three rows. Again, we can think back to the equation predicting plant height $y$, but now we need another coefficient. The equation can now be expressed as, $y = \beta_{0} + \beta_{1} x_{1} + \beta_{2} x_{2}$. Note that subscripts have been added to $x$. This is because we now have two dummy variables; is the plant species 1 (if so, $x_{1} = 0$ and $x_{2} = 0$), species 2 ($x_{1} = 1$ and $x_{2} = 0$), or species 3 ($x_{1} = 0$ and $x_{2} = 1$)? With these dummy variables, we can now predict the height of species 1,
+
+$$y = \beta_{0} + (\beta_{1} \times 0) + (\beta_{2} \times x_{2}).$$
+
+The above reduces to $y = \beta_{0}$, as with our two species case. The height of species 2 can be predicted as below,
+
+$$y = \beta_{0} + (\beta_{1} \times 1) + (\beta_{2} \times x_{2}).$$
+The above reduces to $y = \beta_{0} + \beta_{1}$, again, as with the two species case. Finally, we can use the linear model to predict the height of species 3 plants,
+
+$$y = \beta_{0} + (\beta_{1} \times 0) + (\beta_{2} \times 1).$$
+
+The above reduces to $y = \beta_{0} + \beta_{2}$. Let's use the `tapply` function to see what the mean values of each species are in the new data set.
+
+```{r}
+tapply(X = plant_data$height, INDEX = plant_data$species_ID, FUN = mean);
+```
+
+```{r, echo = FALSE}
+pd_mns <- tapply(X = plant_data$height, INDEX = plant_data$species_ID, FUN = mean);
+```
+
+
+Now look at that output `summary(lmod2)` again. Notice that the estimate of the intercept `(Intercept)` is the same as the mean height of species 1 (`r pd_mns[1]`). Similarly, add the intercept ($\beta_{0}$) to the coefficient in the second row, `plant_data$species_IDspecies_2` (i.e., $\beta_{1}$); this value equals the mean estimate for species 2. Finally, add the intercept to the coefficient in the third row `plant_data$species_IDspecies_3` (i.e., $\beta_{2}$); this value equals the mean estimate for species 3. Once again, we see how the linear model is equivalent to the ANOVA.
+
+
+<a href="whatreally">Okay, but what's really happening with three groups?</a>
+================================================================================
