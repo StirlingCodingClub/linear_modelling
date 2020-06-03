@@ -1,0 +1,140 @@
+---
+title: "Linear Modelling"
+author: "Brad Duthie"
+date: "03/06/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r, echo = FALSE}
+library(knitr);
+```
+
+
+Making up data for heights of two plant species
+================================================================================
+
+Let's first make up some data and put it into a data frame. To make everything a bit more concrete, let's just imagine that we're sampling the heights of individual plants from two different species. Hence, we'll have one categorical independent variable, and one continuous dependent variable (plant height). I am just going to make up some data to work with below. The data frame below includes plant height (`height`; since this is a made up example, the units are not important, but let's make them mm) and species ID (`species_ID`). The first 10 plants (each plant is a unique row) are shown below.
+
+
+```{r, echo = FALSE}
+species  <- c("species_1", "species_2");
+sim_pval <- 0;
+while(sim_pval > 0.05 | sim_pval < 0.001){
+    species_eg  <- sample(x = species, size = 100, replace = TRUE);
+    species1    <- as.numeric(species_eg == "species_1");
+    species2    <- as.numeric(species_eg == "species_2");
+    error       <- rnorm(n = 100, mean = 0, sd = 40);
+    height      <- round(400 + (species2 * 20) + error, digits = 2);
+    species_ID  <- as.factor(species_eg);
+    plant_data  <- data.frame(height, species_ID);
+    sim_mod     <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+    sim_pval    <- summary(sim_mod)$coefficients[2,4];
+}
+write.csv(plant_data, file = "two_discrete_x_values.csv", row.names = FALSE);
+kable(plant_data[1:10,], align = "l");
+```
+
+
+Using the linear modelling approach [described by Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/), the above data qualify as a simple regression with a discrete x (`species_ID`). Assuming that both species have equal variances in height, we can use a two-sample t-test in R to test the null hypothesis that the mean height of `species_1` is equal to the mean height of `species_2`. To use `t.test`, we can first create two separate vectors of heights, the first one called `species_1`.
+
+```{r}
+species_1 <- plant_data$height[plant_data$species_ID == "species_1"];
+```
+
+Below shows `species_1`, which includes the heights of all `r length(species_1)` plants whose `species_ID == "species_1"`.
+
+```{r, echo = FALSE}
+print(species_1);
+```
+
+We can make a separate vector for the remaining heights for the plants of species 2 in the same way.
+
+```{r}
+species_2 <- plant_data$height[plant_data$species_ID == "species_2"];
+```
+
+These `r length(species_2)` plant heights are shown below.
+
+```{r, echo = FALSE}
+print(species_2);
+```
+
+It might help to plot a histogram of the two plant species heights side by side.
+
+```{r, echo = FALSE}
+hist(species_1, breaks = 10, col = "blue", xlim = c(260, 650), 
+     main = "", xlab = "Plant height", cex.lab = 1.25, ylim = c(0, 15));
+hist(species_2, breaks = 10, col = "red", add = TRUE)
+legend(x = 260, y = 15, fill = c("red", "blue"), 
+       legend = c("species_2", "species_1"));
+```
+
+Visualising the histogram above, we already have a sense of whether or not knowing species ID is useful for predicting plant height. 
+
+Equivalence of `t.test` versus a linear model `lm` in R
+================================================================================
+
+Using our two vectors `species_1` and `species_2`, we can run a t-test as noted [by Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). 
+
+```{r}
+t.test(species_1, species_2, var.equal = TRUE);
+```
+
+```{r, echo = FALSE}
+ttest1 <- t.test(species_1, species_2, var.equal = TRUE);
+```
+
+
+Reading the output above, we can get the t-statistic `t = ` `r ttest1$statistic`. Given the null hypothesis that the mean height of `species_1` equals the mean height of `species_2`, the probability of getting such an exterme difference between the two observed means is `p-value < ` `r format(ttest1$p.value, scientific = FALSE)` (i.e., unlikely).
+
+But this is not the only way that we can run a t-test. As [Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/) points out, the linear model structure works just fine as well. 
+
+```{r}
+lmod1 <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+summary(lmod1);
+```
+
+Note how the information in the above output matches that from the `t.test` function. In using `lm`, we get a t value in the coefficients table of `summary(lmod1)$coefficients[2,3]`, and a p-value of  `summary(lmod1)$coefficients[2,4]`. We can also see the mean values for `species_1` and `species_2`, though in slightly different forms. From the `t.test` function, we see an estimated mean of `r round(as.numeric(ttest1$estimate[1]), digits = 4)` for species 1 and `r round(as.numeric(ttest1$estimate[2]), digits = 4)` for species 2 (this is at the bottom of the output, under `mean of x mean of y`). In the `lm`, we get the same information in a slightly different form. The estimate in the coefficients table for the intercept is listed as `r round(summary(lmod1)$coefficients[1,1], digits = 3)`; this is the value of the mean height for species 1. 
+
+Where is the value for the mean height of species 2? We get the value for species 2 by adding the estimate of its effect on the line below, such that `r round(summary(lmod1)$coefficients[1,1], digits = 3)` + `r round(summary(lmod1)$coefficients[2,1], digits = 3)` = `r round(summary(lmod1)$coefficients[1,1] + summary(lmod1)$coefficients[2,1], digits = 3)`. To understand why, think back to that `lm` structure, `plant_data$height ~ 1 + plant_data$species_ID`. Recall from [Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/) how this is a short-hand for the familiar equation $y_{i} = \beta_{0} + \beta_{1} x_{i}$. In this equation, $y_{i}$ is the dependent variable plant height, while the value $x_{i}$ is what we might call a dummy variable. It indicates whether or not the plant 'i' in question is a member of species 2. If yes, then $x_{i} = 1$. If no, then $x_{i} = 0$. 
+
+Now think about the coefficients $\beta_{0}$ and $\beta_{1}$. Because $x_{i} = 0$ whenever `species_ID = species_1`, the predicted plant height $y_{i}$ for species 1 is simply $y_{i} = \beta_{0} + (\beta_{1} \times 0)$, which simplifies to $y_{i} = \beta_{0}$. This is why our `Estimate` of the `(Intercept)` row in the `summary(lmod1)` output equals the mean plant height of species 1. Next, because $x_{i} = 1$ whenever `species_ID = species_2`, the predicted plant height $y_{i}$ for species 2 is $y_{i} = \beta_{0} + (\beta_{1} \times 1)$, which simplifies to $y_{i} = \beta_{0} + \beta_{1}$. This is why our `Estimate` of the `plant_data$species_IDspecies_2` row in the `summary(lmod1)` equals `r round(summary(lmod1)$coefficients[2,1], digits = 3)`. It is the amount that needs to be added to the prediction for species 1 to get the prediction for species 2. We can represent that visually as below.
+
+
+
+
+
+
+
+Further equivalence of `t.test`, `lm`, and now `aov`
+================================================================================
+
+
+
+
+
+
+
+<!---
+
+
+
+```{r, echo = FALSE}
+alt         <- runif(n = 100, min = -20, max = 200);
+species     <- c("species_1", "species_2", "species_3");
+species_eg  <- sample(x = species, size = 100, replace = TRUE);
+species1    <- as.numeric(species_eg == "species_1");
+species2    <- as.numeric(species_eg == "species_2");
+species3    <- as.numeric(species_eg == "species_3");
+error       <- rnorm(n = 100, mean = 0, sd = 40);
+height      <- 400 + (species1 * 2) - alt + (0.1 * species1 * alt) + error;
+species_ID  <- as.factor(species_eg);
+plant_data  <- data.frame(height, species_ID, alt);
+kable(head(plant_data), align = "l");
+```
+
+We can plot these data as a linear model, similar to that [described by Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/).
+
+--->
