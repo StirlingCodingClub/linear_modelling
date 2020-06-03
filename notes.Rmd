@@ -112,7 +112,7 @@ Where is the value for the mean height of species 2? We get the value for specie
 
 Now think about the coefficients $\beta_{0}$ and $\beta_{1}$. Because $x = 0$ whenever `species_ID = species_1`, the predicted plant height $y$ for species 1 is simply $y = \beta_{0} + (\beta_{1} \times 0)$, which simplifies to $y = \beta_{0}$. This is why our `Estimate` of the `(Intercept)` row in the `summary(lmod1)` output equals the mean plant height of species 1. Next, because $x = 1$ whenever `species_ID = species_2`, the predicted plant height $y$ for species 2 is $y = \beta_{0} + (\beta_{1} \times 1)$, which simplifies to $y = \beta_{0} + \beta_{1}$. This is why our `Estimate` of the `plant_data$species_IDspecies_2` row in the `summary(lmod1)` equals `r round(summary(lmod1)$coefficients[2,1], digits = 3)`. It is the amount that needs to be added to the prediction for species 1 to get the prediction for species 2.
 
-To further clarify the concept, we can re-write that original two column table from above, but instead of having `species_1` or `species_2` for the `species_ID` column, we can replace it with a column that is `is_species_2`. A value of `is_species_2 = 0` means the plant is species 1, and a value of `is_species_2 = 1` means the plant is species 2.
+To <a name="bintab">further clarify</a> the concept, we can re-write that original two column table from above, but instead of having `species_1` or `species_2` for the `species_ID` column, we can replace it with a column that is `is_species_2`. A value of `is_species_2 = 0` means the plant is species 1, and a value of `is_species_2 = 1` means the plant is species 2.
 
 ```{r, echo = FALSE}
 is_species_2 <- as.numeric(species_ID == "species_2");
@@ -155,7 +155,7 @@ Note the `F value` and the `Pr(>F)` (i.e., the p-value) in the table above. The 
 <a name="random">Testing for a difference between means using randomisation</a>
 ================================================================================
 
-An alternative approach to testing to the `t.test`, `lm`, and `aov` options above is to use randomisation. Randomisation approaches make fewer assumptions about the data, and I believe that they are often more intuitive. For a full discussion of randomisation techniques, see my [previous notes for Stirling Coding Club](https://stirlingcodingclub.github.io/randomisation/randomisation_notes.html), which goes into much more detail on the underlying logic of randomisation, bootstrap, and Monte Carlo methods. For now, I just want to illustrate how a randomisation approach can get be used for the same null hypothesis testing as shown in the previous methods above. Let us look back at the first ten rows of the data set taht I made up.
+An alternative approach to testing to the `t.test`, `lm`, and `aov` options above is to use randomisation. Randomisation approaches make fewer assumptions about the data, and I believe that they are often more intuitive. For a full discussion of randomisation techniques, see my [previous notes for Stirling Coding Club](https://stirlingcodingclub.github.io/randomisation/randomisation_notes.html), which goes into much more detail on the underlying logic of randomisation, bootstrap, and Monte Carlo methods. For now, I just want to illustrate how a randomisation approach can get be used for the same null hypothesis testing as shown in the previous methods above. Let us look back at the first ten rows of the data set that I made up.
 
 ```{r, echo = FALSE}
 kable(plant_data[1:10,], align = "l");
@@ -231,7 +231,7 @@ while(sim_pval > 0.05 | sim_pval < 0.001){
     sim_mod     <- lm(plant_data$height ~ 1 + plant_data$species_ID);
     sim_pval    <- summary(sim_mod)$coefficients[2,4];
 }
-write.csv(plant_data, file = "two_discrete_x_values.csv", row.names = FALSE);
+write.csv(plant_data, file = "three_discrete_x_values.csv", row.names = FALSE);
 kable(plant_data[1:10,], align = "l");
 ```
 
@@ -276,3 +276,23 @@ Now look at that output `summary(lmod2)` again. Notice that the estimate of the 
 
 <a href="whatreally">Okay, but what's really happening with three groups?</a>
 ================================================================================
+
+How does this *really* work? We have given R a single column with three different categorical values (species) and somehow ended up with an intercept and two regression coefficients. How can understand this more clearly? Think back to the table [from earlier](#bintab) where we had a column for `is_species_2` with a simple zero or one. We can do the same, but with a new column, to include the ID of species 3. 
+
+
+
+
+<a href="matrices">Can we make this even more elegant, somehow?</a>
+================================================================================
+
+$$Y = X \beta.$$
+
+$$X^{t} Y = X^{t} X \beta$$
+
+$$\left( X^{t} X \right)^{-1} X^{t} Y = \left( X^{t} X \right)^{-1} X^{t} X \beta$$
+
+
+
+$$\beta = \left( X^{t} X \right)^{-1} X^{t}Y.$$
+
+
