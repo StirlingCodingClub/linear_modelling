@@ -102,7 +102,7 @@ Reading the output above, we can get the t-statistic `t = ` `r ttest1$statistic`
 But this is not the only way that we can run a t-test. As [Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/) points out, the linear model structure works just fine as well. 
 
 ```{r}
-lmod1 <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+lmod1 <- lm(height ~ 1 + species_ID, data = plant_data);
 summary(lmod1);
 ```
 
@@ -146,7 +146,7 @@ The blue triangle shows the mean height of species 1 (i.e., the intercept of the
 Analysis of variance (ANOVA) tests the null hypothesis that the mean values of groups are all equal. We often think of this being used for group numbers of three or more, but it is worth showing that ANOVA is equivalent to a t-test when the number of groups is two. A one-way ANOVA can be run using the `aov` function in R. Below, I do this for the same `plant_data` table as used for `t.test` and `lm`. 
 
 ```{r}
-aov_1 <- aov(plant_data$height ~ plant_data$species_ID);
+aov_1 <- aov(height ~ species_ID, data = plant_data);
 summary(aov_1);
 ```
 
@@ -238,14 +238,14 @@ kable(plant_data[1:10,], align = "l");
 As already mentioned, `t.test` will not work. But we can run both `lm` and `aov` with the exact same code as before with three groups. I will show `aov` first.
 
 ```{r}
-aov_2 <- aov(plant_data$height ~ plant_data$species_ID);
+aov_2 <- aov(height ~ species_ID, data = plant_data);
 summary(aov_2);
 ```
 
 The F-statistic calculated above is `r round(summary(aov_2)[[1]][["F value"]][1], digits = 3)`, and the p-value is `r round(summary(aov_2)[[1]][["Pr(>F)"]][1], digits = 4)`. The p-value in this case tests the null hypothesis that all groups (i.e., species) have the same mean values (i.e., heights). We can now use the `lm` function to run the same analysis with three groups.
 
 ```{r}
-lmod2 <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+lmod2 <- lm(height ~ 1 + species_ID, data = plant_data);
 summary(lmod2);
 ```
 
@@ -280,6 +280,37 @@ Now look at that output `summary(lmod2)` again. Notice that the estimate of the 
 How does this *really* work? We have given R a single column with three different categorical values (species) and somehow ended up with an intercept and two regression coefficients. How can understand this more clearly? Think back to the table [from earlier](#bintab) where we had a column for `is_species_2` with a simple zero or one. We can do the same, but with a new column, to include the ID of species 3. 
 
 
+```{r, echo = FALSE}
+is_species_2 <- as.numeric(species_ID == "species_2");
+is_species_3 <- as.numeric(species_ID == "species_3");
+lm_table_eg <- data.frame(height, is_species_2, is_species_3);
+kable(lm_table_eg[1:10,], align = "l");
+```
+
+In fact, for even more clarity, we can add a column for the intercept too.
+
+```{r, echo = FALSE}
+the_intercept <- rep(x = 1, length = length(height));
+is_species_2  <- as.numeric(species_ID == "species_2");
+is_species_3  <- as.numeric(species_ID == "species_3");
+lm_table_eg   <- data.frame(height, the_intercept, is_species_2, is_species_3);
+kable(lm_table_eg[1:10,], align = "l");
+```
+
+Now, we can see the equivalence with the linear model expressed in R from above, `lm(height ~ 1 + species_ID, data = plant_data)`. The formula in `lm` is predicting `height` for individual plants using a linear model that includes the intercept (always 1), plus species ID. This relates now more easily to the equation $y = \beta_{0} + \beta_{1}x_{1} + \beta_{2}x_{2}$. The four terms are reflected in the four columns above. Plant height ($y$) is predicted in the left-most column. The second column is all ones, by which we multipy the intercept ($\beta_{0}$). Columns two and three define the `species_ID` in R, and the $\beta_{1}x_{1} + \beta_{2}x_{2}$ terms of the equation. Note that either $x_{1} = 0$ and $x_{2} = 0$ (the row is species 1), $x_{1} = 1$ and $x_{2} = 0$ (species 2), or $x_{1} = 0$ and $x_{2} = 1$ (species 3). Hence, the coefficients $\beta_{1}$ and $\beta_{2}$ apply only for species 2 and 3, repsectively (and the absence of both occurs for species 1). You should be able to connect this concept with the output of `summary(lmod2)` above.
+
+Now if we want to predict the height of any plant (rows), we can do so just by multiplying the values in columns 2-4 (always 1 or 0) by the corresponding regression coefficients. For example, where `is_species_2 = 0` and `is_species_3 = 0`, we have $y = (\beta_{0} \times 1) + (\beta_{1} \times 0) + (\beta_{2} \times 0)$. Substituting the regression coefficients from the `summary(lmod2)` above, we have,
+
+$$y = ( `r round(summary(lmod2)$coefficients[1,1], digits = 3)` \times 1) + ( `r round(summary(lmod2)$coefficients[2,1], digits = 3)` \times 0) + ( `r round(summary(lmod2)$coefficients[3,1], digits = 3)` \times 0).$$
+
+Note that the above simplifies to `r round(summary(lmod2)$coefficients[1,1], digits = 3)`, the predicted height of species 1. We can do the same for species 2.
+
+
+$$y = ( `r round(summary(lmod2)$coefficients[1,1], digits = 3)` \times 1) + ( `r round(summary(lmod2)$coefficients[2,1], digits = 3)` \times 1) + ( `r round(summary(lmod2)$coefficients[3,1], digits = 3)` \times 0).$$
+
+The above simplifies to $y = `r round(summary(lmod2)$coefficients[1,1], digits = 3)` + `r round(summary(lmod2)$coefficients[2,1], digits = 3)`$, which equals `r round(summary(lmod2)$coefficients[1,1] + summary(lmod2)$coefficients[2,1], digits = 3)`, the predicted height of species 2. I will leave the predicted height of species 3 to the reader.
+
+Note that we have been working with categorical variables, species. These are represented by ones and zeroes. But we can also imagine that some other continuous variable might be included in the model. For example, perhaps the altitude at which the plant was collected is also potentially important for predicting plant height. The common name for this model would be 'ANCOVA', but all that we would really be doing is adding one more column to the table above. The column would be 'altitude', and would perhaps include values expressing metres above sea level (e.g., `altitude = 23.42, 32.49, 10.02`, and so forth; one for each plant). This value would be multiplied by a new coefficient $\beta_{3}$ to predict plant hieght, and be represented as a `lm` in R with `lm(height ~ 1 + species_ID + altitude, data = plant_data)`. Its equation would be $y = \beta_{0} + \beta_{1}x_{1} + \beta_{2}x_{2} + \beta_{3}x_{3}$, where altitude is $x_{3}$.
 
 
 <a href="matrices">Can we make this even more elegant, somehow?</a>
