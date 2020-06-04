@@ -3,13 +3,21 @@ title: "On the equivalence of t-tests, anovas, and linear models"
 author: "Brad Duthie"
 date: "03/06/2020"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
+linkcolor: blue
 ---
 
 ```{r, echo = FALSE}
 library(knitr);
 ```
+
+********************************************************************************
+
+**These are some notes for practice and discussion in Stirling Coding Club, which follow up on a recent meeting in the Stats Discussion Group at the University of Stirling on a [blog post by Jonas Kristoffer Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). What follows is further demonstration and discussion on linear models in statistics. The goal here is to create a simulated data set, then use it show a bit more clearly the logic underlying linear models in statistics.**
+
+********************************************************************************
+
 
 Contents
 ================================================================================
@@ -20,6 +28,12 @@ Contents
 - [Testing for a difference between means using randomisation](#random)
 - [What about when there are more than two groups?](#moregroups)
 - [Okay, but what's really happening with three groups?](#whatreally)
+- [Can we make this even more elegant, somehow?](#matrices)
+- [Some final thoughts](#final)
+- [Key bits of code underlying the simulated data](#code)
+
+
+********************************************************************************
 
 
 <a name = "makeup">Making up data for heights of two plant species</a>
@@ -310,20 +324,205 @@ $$y = ( `r round(summary(lmod2)$coefficients[1,1], digits = 3)` \times 1) + ( `r
 
 The above simplifies to $y = `r round(summary(lmod2)$coefficients[1,1], digits = 3)` + `r round(summary(lmod2)$coefficients[2,1], digits = 3)`$, which equals `r round(summary(lmod2)$coefficients[1,1] + summary(lmod2)$coefficients[2,1], digits = 3)`, the predicted height of species 2. I will leave the predicted height of species 3 to the reader.
 
-Note that we have been working with categorical variables, species. These are represented by ones and zeroes. But we can also imagine that some other continuous variable might be included in the model. For example, perhaps the altitude at which the plant was collected is also potentially important for predicting plant height. The common name for this model would be 'ANCOVA', but all that we would really be doing is adding one more column to the table above. The column would be 'altitude', and would perhaps include values expressing metres above sea level (e.g., `altitude = 23.42, 32.49, 10.02`, and so forth; one for each plant). This value would be multiplied by a new coefficient $\beta_{3}$ to predict plant hieght, and be represented as a `lm` in R with `lm(height ~ 1 + species_ID + altitude, data = plant_data)`. Its equation would be $y = \beta_{0} + \beta_{1}x_{1} + \beta_{2}x_{2} + \beta_{3}x_{3}$, where altitude is $x_{3}$.
+Note that we have been working with categorical variables, species. These are represented by ones and zeroes. But we can also imagine that some other continuous variable might be included in the model. For example, perhaps the altitude at which the plant was collected is also potentially important for predicting plant height. The common name for this model would be 'ANCOVA', but all that we would really be doing is adding one more column to the table above. The column would be 'altitude', and would perhaps include values expressing metres above sea level (e.g., `altitude = 23.42, 32.49, 10.02`, and so forth; one for each plant). This value would be multiplied by a new coefficient $\beta_{3}$ to predict plant height, and be represented as a `lm` in R with `lm(height ~ 1 + species_ID + altitude, data = plant_data)`. Its equation would be $y = \beta_{0} + \beta_{1}x_{1} + \beta_{2}x_{2} + \beta_{3}x_{3}$, where altitude is $x_{3}$.
 
 
-<a href="matrices">Can we make this even more elegant, somehow?</a>
+<a name="matrices">Can we make this even more elegant, somehow?</a>
 ================================================================================
+
+I hope that all of this has further illustrated some of the mathematics and code underlying linear models. Readers who are satisfied can skip this section, but I want to go just one step further and demonstrate how linear model prediction really boils down to **just one equation**. This equation is a generalisation of the by now familiar $y = \beta_{0} + \beta_{1}x$. We can represent independent and dependent variables in the table above using columns of two matrices, $Y$ and $X$. $Y$ is just a vector of 100 plant heights (matching column 1 from the table above),
+
+
+$$
+Y = \begin{pmatrix}
+  `r lm_table_eg[1, 1]` \\
+  `r lm_table_eg[2, 1]` \\
+  `r lm_table_eg[3, 1]` \\
+  `r lm_table_eg[4, 1]` \\
+  \vdots \\
+  `r lm_table_eg[100, 1]` \\
+\end{pmatrix}.
+$$
+
+Similarly, $X$ is just a matrix with 100 rows and 3 columns indicating the intercept and species identities, as in columns 2-4 above,
+
+
+$$
+X = \begin{pmatrix}
+  `r lm_table_eg[1, 2]`, & `r lm_table_eg[1, 3]`, & `r lm_table_eg[1, 4]` \\
+  `r lm_table_eg[2, 2]`, & `r lm_table_eg[2, 3]`, & `r lm_table_eg[2, 4]` \\
+  `r lm_table_eg[3, 2]`, &`r lm_table_eg[3, 3]`,  & `r lm_table_eg[3, 4]` \\
+  `r lm_table_eg[4, 2]`, &`r lm_table_eg[4, 3]`,  & `r lm_table_eg[4, 4]` \\
+  \vdots \\
+  `r lm_table_eg[100, 2]`, & `r lm_table_eg[100, 3]`, & `r lm_table_eg[100, 4]` \\
+\end{pmatrix}.
+$$
+
+What we want to figure out now are the coefficients for predicting values in $Y$ (i.e., matrix elements) from values in each of the columns of $X$. In other words, what are the values of $\beta_{0}$, $\beta_{1}$, $\beta_{2}$, which were explained in the last section? We can also represent these values in a matrix $\beta$,
+
+
+$$
+\beta = \begin{pmatrix}
+  \beta_{0} \\
+  \beta_{1} \\
+  \beta_{2} \\
+\end{pmatrix}.
+$$
+
+We have already figured out what these values are using `lm` in R. They are just the `Estimate` values from the output of `summary(lmod2)` in [an earlier section](#moregroups). But we can also predict them using a bit of matrix algebra, solving for $\beta$ given the values in $Y$ and $X$. The generalisation of $y = \beta_{0} + \beta_{1}x$ is the compact equation below,
 
 $$Y = X \beta.$$
 
-$$X^{t} Y = X^{t} X \beta$$
+For our data, we could therefore substute for $Y$ and $X$ matrices,
 
-$$\left( X^{t} X \right)^{-1} X^{t} Y = \left( X^{t} X \right)^{-1} X^{t} X \beta$$
+$$
+\begin{pmatrix}
+  `r lm_table_eg[1, 1]` \\
+  `r lm_table_eg[2, 1]` \\
+  `r lm_table_eg[3, 1]` \\
+  `r lm_table_eg[4, 1]` \\
+  \vdots \\
+  `r lm_table_eg[100, 1]` \\
+\end{pmatrix} = \begin{pmatrix}
+  `r lm_table_eg[1, 2]`, & `r lm_table_eg[1, 3]`, & `r lm_table_eg[1, 4]` \\
+  `r lm_table_eg[2, 2]`, & `r lm_table_eg[2, 3]`, & `r lm_table_eg[2, 4]` \\
+  `r lm_table_eg[3, 2]`, &`r lm_table_eg[3, 3]`,  & `r lm_table_eg[3, 4]` \\
+  `r lm_table_eg[4, 2]`, &`r lm_table_eg[4, 3]`,  & `r lm_table_eg[4, 4]` \\
+  \vdots \\
+  `r lm_table_eg[100, 2]`, & `r lm_table_eg[100, 3]`, & `r lm_table_eg[100, 4]` \\
+\end{pmatrix} \begin{pmatrix}
+  \beta_{0} \\
+  \beta_{1} \\
+  \beta_{2} \\
+\end{pmatrix}.
+$$
 
+Given this equation, we now only need to solve for $\beta$ to get our coefficients predicting $Y$ from $X$. This requires some knowledge of [matrix multiplication](https://en.wikipedia.org/wiki/Matrix_multiplication) and [matrix inversion](https://en.wikipedia.org/wiki/Invertible_matrix). These topics are a lesson in themselves, so I will not go into any detail as to what these matrix operations do. The point is that we are trying to isolate $\beta$ in the equation $Y = X \beta$. My hope is that a rough idea of what is going on is possible even for those unfamiliar with matrix algebra, but feel free to [skip ahead](#betapred).
+
+**Isolating $\beta$ with matrix algebra**
+
+I should note that all of the matrix algebra that you have seen here is thanks to [Dean Adams](https://www.eeob.iastate.edu/people/dean-adams) at Iowa State University (but if you notice any errors, they are mine, not his). The first thing that we need to isolate $\beta$ is to multiply both sides of the equation $Y = \beta X$ by the [transpose](https://en.wikipedia.org/wiki/Transpose) of $X$, $X^{t}$,
+
+$$X^{t} Y = X^{t} X \beta.$$
+
+Next, we multiply both sides by the [inverse](https://en.wikipedia.org/wiki/Invertible_matrix) of $(X^{t}X)$, $(X^{t}X)^{-1}$,
+
+$$\left( X^{t} X \right)^{-1} X^{t} Y = \left( X^{t} X \right)^{-1} X^{t} X \beta.$$
+
+Notice now that on the right side of the equation, we have $\left( X^{t} X \right)^{-1} X^{t} X$. In other words, we multiply the inverse of $(X^{t}X)$ by itself, thereby cancelling itself out (getting the [identity matrix](https://en.wikipedia.org/wiki/Identity_matrix), the matrix algebra equivalent of 1). That leaves us only with $\beta$ on the right hand side of the equation, which is exactly what we want. We can flip this around and put $\beta$ on the left side of the equation,
 
 
 $$\beta = \left( X^{t} X \right)^{-1} X^{t}Y.$$
+
+Hence, we have isolated $\beta$, and can use the right side of the above equation (where the data are located) to get our predictors.
+
+<a name="betapred">**Using one equation to get predictions of coefficients**</a>.
+
+We now have our equation for getting our prediction coefficients $\beta$,
+
+$$\beta = \left( X^{t} X \right)^{-1} X^{t}Y.$$
+
+Now I will use this equations to rederive our regression coefficients. **Do not worry about the details here**. What I want to show is that the above equation really does get us the same regression coefficents that we got from the output of `summary(lmod2)` [earlier](#moregroups). Here is that output again.
+
+```{r, echo = FALSE}
+summary(lmod2);
+```
+
+Now let's use the data in `plant_data` to calculate $\beta$ manually instead. Here are the first ten rows of `plant_data` again.
+
+```{r, echo = FALSE}
+plant_data <- lm_table_eg;
+kable(plant_data[1:10,]);
+```
+
+We want to set the first column as a matrix $Y$, and the remaining columns as a matrix $X$.
+
+```{r}
+Y <- as.matrix(plant_data[,1]);
+X <- as.matrix(plant_data[,2:4]);
+```
+
+Here are the first five elements of `Y`.
+
+```{r, echo = FALSE}
+print(Y[1:5, ]);
+```
+
+Here are the first five rows of `X`.
+
+```{r, echo = FALSE}
+print(X[1:5,]);
+```
+
+Let's do the matrix algebra now below to get values of $\beta$. Note that in R, [matrix multiplication](https://en.wikipedia.org/wiki/Matrix_multiplication) is denoted by the operation `%*%`. [Matrix inversion](https://en.wikipedia.org/wiki/Invertible_matrix) of `X` is written as `solve(X)`, and matrix [transpose](https://en.wikipedia.org/wiki/Transpose) of `X` is written as `t(X)`. Our expression of $\beta = \left( X^{t} X \right)^{-1} X^{t}Y$ in R is therefore as follows.
+
+```{r}
+betas <- solve( t(X) %*% X ) %*% t(X) %*% Y;
+```
+
+We can now print `betas` to reveal our coefficients, just as they were reported by `lm`.
+
+
+```{r}
+print(betas);
+```
+
+We have just produced our regression coefficients manually, with matrix algebra. 
+
+<a name="final">Some final thoughts</a>
+================================================================================
+
+The reason that I have gone through this step by step is to build on our earlier exploration of common statistical tests as linear models. All linear models can be expressed using this common framework. In the above matrix example, note that we could have added as many columns as we wished to $X$. Perhaps we also collected data on the altitude at which we found the plants in our hypothetical example. We could add this information in as an additional column of numbers in $X$, then calculated a new $\beta_{4}$ in exactly the same way. In our new model, this would result in a discrete group predictor (species, in our case), and a continuous variable (altitude). The associated statistical test would commonly be called an ANCOVA, but all that would really have happened is that we would be adding a new column to the list of independent variables. **As an exercise**, think about how we would add interaction terms in $X$.
+
+But wait, there is more. There is no reason why $Y$ needs to be represented by a single column. Maybe we want to predict not just plant height, but plant seed production too. In other words, perhaps we have more than one dependent variable and we need a [multivariate](https://en.wikipedia.org/wiki/Multivariate_statistics) approach (e.g., [MANOVA](https://en.wikipedia.org/wiki/Multivariate_analysis_of_variance)). The same equation for getting $\beta$ works here too; we can think of multivariate linear models in the exact same way as univariate models; we are just adding more columns to $Y$.
+
+I hope that this has been a useful supplement to the already very useful introduction by [Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). There are details that I have left out for the sake of time, but my goal has been to further simplify the logic and mathematics underying linear models in statistics. 
+
+This document is entirely reproducible. Because the data are simulated, if you Knit it in Rstudio, you will get different numbers each time. I encourage you to try this, and explore the code for yourself. I have cheated in a few places just to avoid making a simulated data set that is too extreme, by chance. All of the code is posted below with some notes.
+
+<a name="code">Key bits of code underlying the simulated data</a>
+================================================================================
+
+The code below can be used to generate a CSV file with simulated data as shown here. Note that you can change the significance of different regression coefficients, and their magnitudes and signs, by changing how `height` is defined within the `while` loops below.
+
+```{r, eval = FALSE}
+# The code below creates plant heights with an intercept of roughly 150
+# and a beta_1 coefficient of roughly 20, with some error added into it.
+# The while loop just does this to avoid any non-significant results or 
+# very highly significant results that arise due to chance.
+species_n <- c("species_1", "species_2");
+sim_pval  <- 0;
+while(sim_pval > 0.05 | sim_pval < 0.001){
+    species_eg  <- sample(x = species_n, size = 100, replace = TRUE);
+    species1    <- as.numeric(species_eg == "species_1");
+    species2    <- as.numeric(species_eg == "species_2");
+    error       <- rnorm(n = 100, mean = 0, sd = 40);
+    height      <- round(150 + (species2 * 20) + error, digits = 2);
+    species_ID  <- as.factor(species_eg);
+    plant_data  <- data.frame(height, species_ID);
+    sim_mod     <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+    sim_pval    <- summary(sim_mod)$coefficients[2,4];
+}
+write.csv(plant_data, file = "two_discrete_x_values.csv", row.names = FALSE);
+
+# Below does the same job as above, just with three species instead of two
+species_n <- c("species_1", "species_2", "species_3");
+sim_pval  <- 0;
+while(sim_pval > 0.05 | sim_pval < 0.001){
+    species_eg  <- sample(x = species_n, size = 100, replace = TRUE);
+    species1    <- as.numeric(species_eg == "species_1");
+    species2    <- as.numeric(species_eg == "species_2");
+    species3    <- as.numeric(species_eg == "species_3");
+    error       <- rnorm(n = 100, mean = 0, sd = 40);
+    height      <- round(150 + (species2 * 20) + error, digits = 2);
+    species_ID  <- as.factor(species_eg);
+    plant_data  <- data.frame(height, species_ID);
+    sim_mod     <- lm(plant_data$height ~ 1 + plant_data$species_ID);
+    sim_pval    <- summary(sim_mod)$coefficients[2,4];
+}
+write.csv(plant_data, file = "three_discrete_x_values.csv", row.names = FALSE);
+```
+
+
 
 
