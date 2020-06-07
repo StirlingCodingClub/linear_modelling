@@ -3,9 +3,9 @@ title: "On the equivalence of t-tests, anovas, and linear models"
 author: "Brad Duthie"
 date: "03/06/2020"
 output:
+  word_document: default
   html_document: default
   pdf_document: default
-  word_document: default
 linkcolor: blue
 ---
 
@@ -15,7 +15,7 @@ library(knitr);
 
 ********************************************************************************
 
-**These are some notes for practice and discussion in Stirling Coding Club, which follow up on a recent meeting in the Stats Discussion Group at the University of Stirling on a [blog post by Jonas Kristoffer Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). What follows is further demonstration and discussion on linear models in statistics. The goal here is to create a simulated data set, then use it show a bit more of the logic underlying linear models in statistics.**
+**These are some notes for practice and discussion in Stirling Coding Club, which follow up on a recent meeting in the Stats Discussion Group at the University of Stirling on a [blog post by Jonas Kristoffer Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). What follows is further demonstration and discussion on linear models in statistics. The goal here is to create a simulated data set, then use it show a bit more of the logic underlying linear models in statistics. These notes are also available as a [PDF](https://stirlingcodingclub.github.io/linear_modelling/notes.pdf) and [DOCX](https://stirlingcodingclub.github.io/linear_modelling/notes.docx).**
 
 ********************************************************************************
 
@@ -32,7 +32,11 @@ Contents
 - [Can we make this even more elegant, somehow?](#matrices)
 - [Some final thoughts](#final)
 - [Key bits of code underlying the simulated data](#code)
-
+- [Excercises for furthering learning](#exercises)
+    - [Exercise 1](#E1)
+    - [Exercise 2](#E2)
+    - [Exercise 3](#E3)
+- [Answers to Exercises 1-3](#answers)
 
 ********************************************************************************
 
@@ -473,7 +477,7 @@ We have just produced our regression coefficients manually, with matrix algebra.
 <a name="final">Some final thoughts</a>
 ================================================================================
 
-The reason that I have gone through this step by step is to build on our earlier exploration of common statistical tests as linear models. All linear models can be expressed using this common framework. In the above matrix example, note that we could have added as many columns as we wished to $X$. Perhaps we also collected data on the altitude at which we found the plants in our hypothetical example. We could add this information in as an additional column of numbers in $X$, then calculated a new $\beta_{4}$ in exactly the same way. In our new model, this would result in a discrete group predictor (species, in our case), and a continuous variable (altitude). The associated statistical test would commonly be called an ANCOVA, but all that would really have happened is that we would be adding a new column to the list of independent variables. **As an exercise**, think about how we would add interaction terms in $X$.
+The reason that I have gone through this step by step is to build on our earlier exploration of common statistical tests as linear models. All linear models can be expressed using this common framework. In the above matrix example, note that we could have added as many columns as we wished to $X$. Perhaps we also collected data on the altitude at which we found the plants in our hypothetical example. We could add this information in as an additional column of numbers in $X$, then calculated a new $\beta_{4}$ in exactly the same way. In our new model, this would result in a discrete group predictor (species, in our case), and a continuous variable (altitude). The associated statistical test would commonly be called an ANCOVA, but all that would really have happened is that we would be adding a new column to the list of independent variables. **As an exercise**, think about how we would add interaction terms in $X$. Interaction terms are demonstrated in [Exercise 3](#E3) below.
 
 But wait, there's more. There is no reason why $Y$ needs to be represented by a single column. Maybe we want to predict not just plant height, but plant seed production too. In other words, perhaps we have more than one dependent variable and we need a [multivariate](https://en.wikipedia.org/wiki/Multivariate_statistics) approach (e.g., [MANOVA](https://en.wikipedia.org/wiki/Multivariate_analysis_of_variance)). The same equation for getting $\beta$ works here too. We can think of multivariate linear models in the exact same way as univariate models; we are just adding more columns to $Y$.
 
@@ -525,5 +529,223 @@ write.csv(plant_data, file = "three_discrete_x_values.csv", row.names = FALSE);
 ```
 
 
+<a name="exercises">Excercises for furthering learning</a>
+================================================================================
+
+I have included some exercises below that involve simulating data and using it to build linear models. One benefit of using simulated data is that it allows us to know *a priori* what the relationships are between different variables, and to adjust these relationships to see how they affect model prediction and statistical hypothesis tests. As done above in the [code for simulating the examples](#code), the exercises below will make up some for use in a linear model.
+
+********************************************************************************
+
+<a name ="E1">**Exercise 1**</a>
+
+Create a single dependent variable $Y$ and independent variable $X$, with the relationship between these two variables predicted using a linear model as below,
+
+$$y_{i} = \beta_{0} + \beta_{1} x_{i} + \epsilon_{i}.$$
+
+In the above, $y_{i}$ and $x_{i}$ are data collected on the random variables $Y$ and $X$, respectively, for individual observed values $i$. Values of $\beta_{0}$ and $\beta_{1}$ define regression coefficients, and $\epsilon_{i}$ reflects an error attributable to unobserved noise. **As an exercise, simulate 100 observations from a population in which $X$ is a random normal variable with a mean of $\mu_X = 20$ and standard deviation of $\sigma_{X} = 5$, $\beta_{0} = 10$, and $\beta_{1} = -1/2$. Assume that $\epsilon_{i}$ is sampled from a normal distribution with a mean of 0 and standard deviation of 4**. [Here is some code if you get stuck](#aE1).
+
+- Plot a histogram of $x$ and $y$, then a scatter-plot of $y$ against $x$.
+- Use the R function `lm`, find estimates for $\beta_{0}$ and $\beta_{1}$; how do these estimate relate to the code you used to generate your simulated data?
+- Use the R function `summary` to test the significance of $\beta_{0}$ and $\beta_{1}$. Is this what you expected?
+- Re-run your code several times to simulate different numbers of observations, then see how this affects estimates of regression coefficients and signifiance tests of $\beta_{0}$ and $\beta_{1}$.
+- Re-run your code several times with different standard deviations for $\epsilon$, then see how this affects estimates of regression coefficients and signifiance tests of $\beta_{0}$ and $\beta_{1}$.
+- Make a table such as those shown in the notes above, which could be used to predict $y_{i}$ from $x_{i}$ (see [this table](#aE1) for an answer).
+
+********************************************************************************
+
+<a name ="E2">**Exercise 2**</a>
+
+Create a single dependent variable $Y$ as in [Exercise 1](#E1), but now make $X$ categorical rather than continuous. If $X$ is "Group_1", then make its effect on $Y$ half that predicted given $X$ is "Group 2". The code for doing this is a bit more challenging than simply randomly sampling from a normal distribution, so [here is the code](#aE2) if you get stuck.
+
+********************************************************************************
+
+<a name ="E3">**Exercise 3**</a>
+
+We have ignored statistical interactions until now. Finally, let's model some interactions with simulated data. To do this, create a new model with a dependent variable $Y$, as predicted by the continuous variable $X$ and the categorical variable $Z$. Include an interaction term, in the linear model `lm`. Finally, build a table such as the the ones in the notes and previous two exercises to predict a value $y_{i}$ from $x_{i}$, $z_{i}$ and the appropriate coefficients ($\beta_{0}$, $\beta_{1}$, and $\beta_{2}$). This is challenging, so first try to think conceptually about what you need to do, then try to write the code for it. If you get stuck, [here is the code](#aE3).
+
+********************************************************************************
+
+
+
+<a name="answers">Answers to exercises for learning</a>
+================================================================================
+
+Help for writing the code to simulate data and run linear models is shown below.
+
+********************************************************************************
+
+
+<a name = "aE1">**Code for completing Exercise 1**</a>
+
+```{r, eval = FALSE}
+x  <- rnorm(n = 1000, mean = 20, sd = 5);
+b0 <- 10;
+b1 <- -1/2;
+ep <- rnorm(n = 1000, mean = 0, sd = 4);
+y  <- b0 + (b1 * x) + ep;
+
+# Plot histograms of x and y below
+hist(x);
+hist(y);
+
+# Scatter-plot of x versus y
+plot(x = x , y = y);
+
+# Get estimate of the coefficients
+mod1 <- lm(y ~ x);
+print(mod1);
+summary(mod1);
+```
+
+```{r, echo = FALSE}
+x  <- rnorm(n = 1000, mean = 20, sd = 5);
+b0 <- 10;
+b1 <- -1/2;
+ep <- rnorm(n = 1000, mean = 0, sd = 4);
+y  <- b0 + (b1 * x) + ep;
+```
+
+To change the number of observations, set `n = 1000` to something else when generating data for `x` and `ep`. To get a different standard deviation for $\epsilon_{i}$ (i.e., the error), set `sd = 4` to something else. You can also change the values of `b0` and `b1` to see how this affects regression coefficients. Your predictions will be different than mine, but here is my output for `summary(mod1)`.
+
+
+```{r, echo = FALSE}
+x  <- rnorm(n = 1000, mean = 20, sd = 5);
+b0 <- 10;
+b1 <- -1/2;
+ep <- rnorm(n = 1000, mean = 0, sd = 4);
+y  <- b0 + (b1 * x) + ep;
+print(summary(lm(y~x)));
+```
+
+To get a table from which $y_{i}$ could be predicted from $x_{i}$, see the code below.
+
+```{r}
+ones      <- rep(x = 1, times = 1000); # For the intercept
+the_table <- cbind(y, ones, x, ep);
+print(the_table[1:5,]); # Just show the first five rows
+```
+
+To predict the `y` value in the left-most column, we multiply the second column `ones` by our estimated $\beta_{0}$, then add the third column `x` times our estimated $\beta_{1}$, then add the error `ep`. Try this for a few of the rows. You will find that the predicted `y` is still not exact. Why? And what could you multiply `ones` and `x` by to exactly predict `y` (hint: think about the numbers that you used to simulate the data).
+
+********************************************************************************
+
+
+<a name = "aE2">**Code for completing Exercise 2**</a>
+
+
+Help for writing the code to simulate data given $X$ as a categorical rather than a continuous variable is shown below.
+
+```{r, eval = FALSE}
+x_groups <- c("Group_1", "Group_2"); # All the possible groups
+x        <- sample(x = x_groups, size = 1000, replace = TRUE); # Sample groups
+b0       <- 10;
+b1       <- -1/2;
+ep       <- rnorm(n = 1000, mean = 0, sd = 4);
+
+# Now is a challenging part -- we need to set X to a binary, is_group_2
+is_group_2 <- as.numeric( x == "Group_2" );
+y          <- b0 + (b1 * is_group_2) + ep;
+
+# Try plotting the below
+plot(x = is_group_2, y = y);
+
+#Now we can use a linear model as before. 
+mod1 <- lm(y ~ x);
+print(mod1);
+summary(mod1);
+```
+
+
+As before, your predictions will be different than mine, but here is my output for `summary(mod2)`.
+
+
+```{r, eval = TRUE, echo = FALSE}
+x_groups <- c("Group_1", "Group_2"); # All the possible groups
+x        <- sample(x = x_groups, size = 1000, replace = TRUE); # Sample groups
+b0       <- 10;
+b1       <- -1/2;
+ep       <- rnorm(n = 1000, mean = 0, sd = 4);
+
+# Now is a challenging part -- we need to set X to a binary, is_group_2
+is_group_2 <- as.numeric( x == "Group_2" );
+y          <- b0 + (b1 * is_group_2) + ep;
+
+#Now we can use a linear model as before. 
+mod1 <- lm(y ~ x);
+summary(mod1);
+```
+
+As with [Excercise 1](#aE1), to get a table from which $y_{i}$ could be predicted from $x_{i}$, see the code below.
+
+```{r}
+ones        <- rep(x = 1, times = 1000); # For the intercept
+the_table_2 <- cbind(y, ones, is_group_2, ep);
+print(the_table_2[1:5,]); # Just show the first five rows
+```
+
+
+Think again about how the left-most column `y` relates to the columns `ones` and `x`, and what the error column `ep` (not something that we know given real data) represents. Try again to predict `y` for a few rows given these values. Think about how this example with a categorical $X$ relates to the example with a continuous $X$ in [Exercise 1](#E1).
+
+********************************************************************************
+
+
+<a name = "aE3">**Code for completing Exercise 3**</a>
+
+Here is the code for completing [Exercise 3](#E3). Because there is a lot happening, I have broken it down a bit more line by line to show how the continuous `x` and categorical `z` are created, then used to build a model with a statistical interaction.
+
+```{r}
+# Here is the continuous variable x
+x        <- rnorm(n = 1000, mean = 20, sd = 5);
+
+# Now to make the categorical variable z
+z_groups <- c("Group_1", "Group_2"); # All the possible groups
+z        <- sample(x = x_groups, size = 1000, replace = TRUE); # Sample groups
+
+# Let's have intercepts beta0 = 10, beta1 = -1/2, and beta2 = 3
+b0       <- 10;
+b1       <- -1/2;
+b2       <- 3;
+ep       <- rnorm(n = 1000, mean = 0, sd = 4); # Error, as with earlier exaples
+
+# As with example 2 -- we need to set X to a binary, is_group_2
+is_group_2 <- as.numeric( z == "Group_2" );
+
+# So where does the interaction come in? Find it below, set to 0.8
+y  <- b0 + (b1 * x) + (b2 * is_group_2) + (0.8 * x * is_group_2) + ep;
+```
+
+See how the interaction of 0.8 is now set in the term `(0.8 * x * is_group_2)`. Now let's run the linear model below, as we would if we had collected $y_{i}$, $x_{i}$, and $z_{i}$ data for $N = 1000$ samples.
+
+```{r}
+mod3 <- lm(y ~ x * z);
+summary(mod3);
+```
+
+
+Look at the output above from `summary(mod3)`, then go back and find the coefficient values in the simulated data. Think about how the two are related. Finally, let's create a table for predicting $y_{i}$ values from $x_{i}$ and $z_{i}$.
+
+```{r}
+ones                 <- rep(x = 1, times = 1000); # For the intercept
+x_group2_interaction <- x * is_group_2; 
+the_table_3          <- cbind(y, ones, x, is_group_2, x_group2_interaction, ep);
+print(the_table_3[1:5,]); # Just show the first five rows
+```
+
+Now go through again and predict `y` from each of these columns, as before. Let's do it once with the estimated coefficients from the linear model. As with previous examples in [Exercise 1](#E1) and [Exercise 2](#E2), predictions will not be perfect. Here is the first row of the table above.
+
+```{r, echo = FALSE}
+sum3 <- summary(mod3);
+```
+
+$$y_{1} = (`r sum3$coefficients[1, 1]` \times `r the_table_3[1, 2]`) + (`r sum3$coefficients[2, 1]` \times `r the_table_3[1, 3]`) + (`r sum3$coefficients[3, 1]` \times `r the_table_3[1, 4]`) + (`r sum3$coefficients[4, 1]` \times `r the_table_3[1, 5]`) + `r the_table_3[1, 6]`.$$
+
+
+If you calculate the above, you get a value of $y_{1} =$ `r (sum3$coefficients[1, 1] * the_table_3[1, 2]) + (sum3$coefficients[2, 1] * the_table_3[1, 3]) + (sum3$coefficients[3, 1] * the_table_3[1, 4]) + (sum3$coefficients[4, 1] * the_table_3[1, 5]) + the_table_3[1, 6]`. Again, this is a close estimate -- closer than we would typically be able to get because when we collect real data, we cannot see the actual value of `ep` ($\epsilon$, the error). But it isn't exact for the same reason as in [Exercise 1](#E1) and [Exercise 2](#E2). Our coefficients from the `lm` are *estimates*. We can predict `y` *exactly* if we instead use the values that we parameterised the model with above.
+
+$$y_{1} = (10 \times `r the_table_3[1, 2]`) + (-1/2 \times `r the_table_3[1, 3]`) + (4 \times `r the_table_3[1, 4]`) + (0.8 \times `r the_table_3[1, 5]`) + `r the_table_3[1, 6]`.$$
+
+With the above, we return the exact value (differences due to rounding) in the table, $y_{1} =$ `r round((10 * the_table_3[1, 2]) + (-0.5 * the_table_3[1, 3]) + (3 * the_table_3[1, 4]) + (0.8 * the_table_3[1, 5]) + the_table_3[1, 6], digits = 7)`. 
+
+I hope that this helps clarify the relationship among model coefficients for different types of variables and interactions. I encourage you to simulate your own data with different structures and explore linear model predictions.
 
 
