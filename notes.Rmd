@@ -1,21 +1,22 @@
 ---
 title: "On the equivalence of t-tests, anovas, and linear models"
 author: "Brad Duthie"
-date: "03/06/2020"
+date: "24 August 2022"
 output:
+  pdf_document: default
   word_document: default
   html_document: default
-  pdf_document: default
 linkcolor: blue
 ---
 
 ```{r, echo = FALSE}
 library(knitr);
+set.seed(108);
 ```
 
 ********************************************************************************
 
-**These are some notes for practice and discussion in Stirling Coding Club, which follow up on a recent meeting in the Stats Discussion Group at the University of Stirling on a [blog post by Jonas Kristoffer Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). What follows is further demonstration and discussion on linear models in statistics. The goal here is to create a simulated data set, then use it show a bit more of the logic underlying linear models in statistics. These notes are also available as a [PDF](https://stirlingcodingclub.github.io/linear_modelling/notes.pdf) and [DOCX](https://stirlingcodingclub.github.io/linear_modelling/notes.docx).**
+**These are some notes for practice and discussion in Stirling Coding Club, which follow up on a meeting in the Stats Discussion Group at the University of Stirling on a [blog post by Jonas Kristoffer Lindel&#248;v](https://lindeloev.github.io/tests-as-linear/). What follows is further demonstration and discussion on linear models in statistics. The goal here is to create a simulated data set, then use it show a bit more of the logic underlying linear models in statistics. These notes are also available as a [PDF](https://stirlingcodingclub.github.io/linear_modelling/notes.pdf) and [DOCX](https://stirlingcodingclub.github.io/linear_modelling/notes.docx).**
 
 ********************************************************************************
 
@@ -302,7 +303,7 @@ How does this *really* work? We have given R a single column with three differen
 ```{r, echo = FALSE}
 is_species_2 <- as.numeric(species_ID == "species_2");
 is_species_3 <- as.numeric(species_ID == "species_3");
-lm_table_eg <- data.frame(height, is_species_2, is_species_3);
+lm_table_eg  <- data.frame(height, is_species_2, is_species_3);
 kable(lm_table_eg[1:10,], align = "l");
 ```
 
