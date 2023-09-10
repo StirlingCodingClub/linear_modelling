@@ -4,7 +4,8 @@ plant_data <- read.csv(file = "two_discrete_x_values.csv");
 species_1 <- plant_data$height[plant_data$species_ID == "species_1"];
 species_2 <- plant_data$height[plant_data$species_ID == "species_2"];
 hist(species_1, breaks = 10, col = "blue", xlim = c(0, 300), 
-     main = "", xlab = "Plant height", cex.lab = 1.25, ylim = c(0, 15));
+     main = "", xlab = "Plant height", cex.lab = 1.25, 
+     ylim = c(0, 15));
 hist(species_2, breaks = 10, col = "red", add = TRUE)
 legend(x = 0, y = 15, fill = c("red", "blue"), 
        legend = c("species_2", "species_1"));
@@ -20,6 +21,7 @@ legend(x = 0, y = 15, fill = c("red", "blue"),
 #################
 t.test(species_1, species_2, var.equal = TRUE);
 lmod1 <- lm(height ~ 1 + species_ID, data = plant_data);
+lmod1 <- lm(height ~ species_ID, data = plant_data);
 summary(lmod1);
 
 
@@ -67,8 +69,8 @@ lines(x = c(0, 1), y = c(summary(lmod1)$coefficients[1,1],
                          summary(lmod1)$coefficients[1,1] + 
                            summary(lmod1)$coefficients[2,1]),
       col = "red", lwd = 4);
-points(x = 0, y = summary(lmod1)$coefficients[1,1], pch = 17, col = "blue",
-       cex = 3);
+points(x = 0, y = summary(lmod1)$coefficients[1,1], pch = 17, 
+       col = "blue", cex = 3);
 points(x = 1, y = summary(lmod1)$coefficients[1,1] + 
          summary(lmod1)$coefficients[2,1], pch = 18, col = "orange", cex = 3);
 
@@ -145,7 +147,8 @@ lmod2 <- lm(height ~ 1 + species_ID, data = plant_data);
 summary(lmod2);
 
 # Can we check out the mean values?
-tapply(X = plant_data$height, INDEX = plant_data$species_ID, FUN = mean);
+tapply(X = plant_data$height, INDEX = plant_data$species_ID, 
+       FUN = mean);
 
 
 
@@ -172,10 +175,11 @@ tapply(X = plant_data$height, INDEX = plant_data$species_ID, FUN = mean);
 #################  What's really going on with 3 groups?
 #################
 #################
-the_intercept <- rep(x = 1, length = length(height));
-is_species_2  <- as.numeric(species_ID == "species_2");
-is_species_3  <- as.numeric(species_ID == "species_3");
-lm_table_eg   <- data.frame(height, the_intercept, is_species_2, is_species_3);
+the_intercept <- rep(x = 1, length = length(plant_data$height));
+is_species_2  <- as.numeric(plant_data$species_ID == "species_2");
+is_species_3  <- as.numeric(plant_data$species_ID == "species_3");
+lm_table_eg   <- data.frame(plant_data$height, the_intercept, 
+                            is_species_2, is_species_3);
 head(lm_table_eg);
 
 
