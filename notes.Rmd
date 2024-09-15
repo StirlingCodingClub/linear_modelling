@@ -1,11 +1,11 @@
 ---
 title: "On the equivalence of t-tests, anovas, and linear models"
 author: "Brad Duthie"
-date: "13 September 2023"
+date: "18 September 2023"
 output:
   word_document: default
-  pdf_document: default
   html_document: default
+  pdf_document: default
 linkcolor: blue
 ---
 
