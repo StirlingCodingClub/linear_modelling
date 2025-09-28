@@ -21,7 +21,7 @@ tval   <- (mean(species_1) - mean(species_2)) / SEybar;
 #################
 #################  Using the t-test function in R and lm
 #################
-t.test(species_1, species_2, var.equal = FALSE);
+t.test(species_1, species_2, var.equal = TRUE);
 
 # Use a linear model instead to get the same numbers
 lmod1 <- lm(height ~ 1 + species_ID, data = plant_data);
